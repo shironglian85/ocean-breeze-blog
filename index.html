@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的博客 - Ocean Breeze</title>
+    <style>
+        :root {
+            --bg: #0a1628;
+            --card: #0f1f3a;
+            --accent: #00b4d8;
+            --accent2: #48cae4;
+            --text: #e0e8f0;
+            --muted: #8899aa;
+            --border: #1a3050;
+            --hover: #122844;
+        }
+
+        .light-mode {
+            --bg: #e8f4f8;
+            --card: #ffffff;
+            --accent: #0077b6;
+            --accent2: #00b4d8;
+            --text: #1a2a3a;
+            --muted: #5a6a7a;
+            --border: #c8dce4;
+            --hover: #d8ecf4;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            transition: background 0.4s, color 0.4s;
+            min-height: 100vh;
+        }
+
+        /* === 顶部导航粒子背景 === */
+        .hero {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, #001d3d, #003566, #0a1628);
+            padding: 60px 20px 50px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+        }
+        .light-mode .hero {
+            background: linear-gradient(135deg, #90e0ef, #caf0f8, #e8f4f8);
+            border-bottom: 2px solid var(--accent);
+        }
+        .hero h1 {
+            font-size: 2.8em;
+            color: var(--accent2);
+            text-shadow: 0 0 30px rgba(0,180,216,0.4);
+            position: relative;
+            z-index: 1;
+        }
+        .hero p {
+            color: var(--muted);
+            font-size: 1.1em;
+            margin-top: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* 粒子 canvas */
+        #particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+        }
+
+        /* === 导航栏 === */
+        nav {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            padding: 14px 20px;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+            position: sticky; top: 0; z-index: 100;
+            backdrop-filter: blur(10px);
+            transition: background 0.4s;
+        }
+        nav a {
+            color: var(--accent);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        nav a:hover { background: var(--accent); color: #fff; }
+
+        /* 主题切换按钮 */
+        .theme-btn {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 1.4em;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,180,216,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .theme-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 28px rgba(0,180,216,0.6);
+        }
+
+        /* === 主布局 === */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 30px;
+        }
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+
+        /* === 文章卡片 === */
+        .post {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 28px;
+            margin-bottom: 24px;
+            transition: transform 0.3s, box-shadow 0.3s, background 0.4s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .post:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,180,216,0.15);
+        }
+        .post::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 4px; height: 100%;
+            background: var(--accent);
+            border-radius: 4px 0 0 4px;
+        }
+        .post .date {
+            color: var(--muted);
+            font-size: 0.85em;
+            margin-bottom: 6px;
+        }
+        .post h2 {
+            color: var(--accent2);
+            margin-bottom: 10px;
+            font-size: 1.4em;
+        }
+        .post .tags { margin-top: 12px; display: flex; gap: 8px; flex-wrap: wrap; }
+        .post .tags span {
+            background: var(--hover);
+            color: var(--accent);
+            padding: 3px 12px;
+            border-radius: 14px;
+            font-size: 0.8em;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .post .tags span:hover { background: var(--accent); color: #fff; }
+
+        /* === 侧边栏 === */
+        .sidebar > * {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 20px;
+            transition: background 0.4s;
+        }
+        .sidebar h3 {
+            color: var(--accent2);
+            margin-bottom: 14px;
+            font-size: 1.1em;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* 搜索 */
+        #searchBox {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 22px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.95em;
+            outline: none;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        #searchBox:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 12px rgba(0,180,216,0.25);
+        }
+
+        /* 标签云 */
+        .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag-cloud .tag {
+            background: var(--hover);
+            color: var(--accent);
+            padding: 5px 14px;
+            border-radius: 16px;
+            font-size: 0.85em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+        .tag-cloud .tag:hover, .tag-cloud .tag.active {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        /* 回到顶部 */
+        .back-to-top {
+            position: fixed;
+            bottom: 90px; right: 30px;
+            width: 48px; height: 48px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            font-size: 1.2em;
+            cursor: pointer;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s, transform 0.3s;
+        }
+        .back-to-top.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .back-to-top:hover { transform: translateY(-3px); }
+
+        /* 打字效果 */
+        #typing-text {
+            color: var(--accent);
+            font-weight: 600;
+            border-right: 2px solid var(--accent);
+            animation: blink 0.7s infinite;
+        }
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+
+        /* 阅读进度条 */
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: var(--accent);
+            z-index: 300;
+            transition: width 0.1s;
+        }
+
+        /* === 写文章按钮 === */
+        .new-post-btn {
+            position: fixed;
+            bottom: 30px; left: 30px;
+            width: 52px; height: 52px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: none;
+            color: #fff;
+            font-size: 1.8em;
+            cursor: pointer;
+            z-index: 200;
+            box-shadow: 0 4px 20px rgba(0,180,216,0.4);
+            transition: transform 0.3s, box-shadow 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .new-post-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 6px 28px rgba(0,180,216,0.6);
+        }
+
+        /* === 模态弹窗 === */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 400;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+            transition: background 0.4s;
+            transform: translateY(20px);
+            transition: transform 0.3s, background 0.4s;
+        }
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+        .modal h2 {
+            color: var(--accent2);
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+        .modal label {
+            display: block;
+            color: var(--muted);
+            font-size: 0.9em;
+            margin-bottom: 4px;
+            margin-top: 14px;
+        }
+        .modal input, .modal select, .modal textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 0.95em;
+            outline: none;
+            font-family: inherit;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        .modal input:focus, .modal select:focus, .modal textarea:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 10px rgba(0,180,216,0.2);
+        }
+        .modal textarea { resize: vertical; min-height: 120px; }
+        .modal .btn-row {
+            display: flex;
+            gap: 12px;
+            margin-top: 22px;
+            justify-content: flex-end;
+        }
+        .modal .btn {
+            padding: 10px 24px;
+            border-radius: 22px;
+            border: none;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .modal .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .modal .btn-primary:hover { filter: brightness(1.15); }
+        .modal .btn-cancel {
+            background: var(--hover);
+            color: var(--muted);
+        }
+        .modal .btn-cancel:hover { background: var(--border); }
+
+        /* 操作按钮组 */
+        .post-actions {
+            position: absolute;
+            top: 12px; right: 16px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .post:hover .post-actions { opacity: 1; }
+        .action-btn {
+            background: var(--hover);
+            border: 1px solid var(--border);
+            color: var(--muted);
+            font-size: 1em;
+            cursor: pointer;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .edit-action:hover { color: var(--accent); border-color: var(--accent); }
+        .del-action:hover { color: #e74c3c; border-color: #e74c3c; }
+
+        /* 页脚 */
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: var(--muted);
+            font-size: 0.9em;
+            border-top: 1px solid var(--border);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 阅读进度条 -->
+    <div class="progress-bar" id="progressBar"></div>
+
+    <!-- 顶部 -->
+    <header class="hero">
+        <canvas id="particles"></canvas>
+        <h1>🌊 Ocean Breeze</h1>
+        <p>「 <span id="typing-text"></span> 」</p>
+    </header>
+
+    <!-- 导航 -->
+    <nav id="navBar">
+        <!-- JS 动态渲染 -->
+    </nav>
+
+    <!-- 主内容 -->
+    <div class="container">
+        <main id="postList">
+            <!-- JS 动态渲染 -->
+        </main>
+
+        <aside class="sidebar">
+            <!-- 搜索 -->
+            <div>
+                <h3>🔍 搜索文章</h3>
+                <input type="text" id="searchBox" placeholder="输入关键词搜索…" oninput="renderPosts()">
+            </div>
+
+            <!-- 标签云 -->
+            <div>
+                <h3>🏷️ 标签云</h3>
+                <div class="tag-cloud" id="tagCloud">
+                    <!-- JS 动态渲染 -->
+                </div>
+            </div>
+
+            <!-- 统计 -->
+            <div>
+                <h3>📊 博客统计</h3>
+                <p style="color:var(--muted);">📄 文章数：<strong id="statPosts" style="color:var(--accent);">0</strong></p>
+                <p style="color:var(--muted);">🏷️ 标签数：<strong id="statTags" style="color:var(--accent);">0</strong></p>
+                <p style="color:var(--muted);" id="visitorCount">👀 今日访客：<strong style="color:var(--accent);">--</strong></p>
+            </div>
+
+            <!-- 分类管理 -->
+            <div>
+                <h3>📂 分类管理</h3>
+                <div id="categoryList" style="margin-bottom:10px;">
+                    <!-- JS 动态渲染 -->
+                </div>
+                <div style="display:flex;gap:6px;">
+                    <input type="text" id="newCatName" placeholder="新分类名称" style="flex:1;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.85em;outline:none;">
+                    <input type="text" id="newCatEmoji" placeholder="😊" maxlength="2" style="width:42px;padding:7px 4px;text-align:center;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.85em;outline:none;">
+                    <button id="addCatBtn" style="padding:7px 12px;border-radius:8px;background:var(--accent);color:#fff;border:none;font-size:0.85em;cursor:pointer;white-space:nowrap;">+ 添加</button>
+                </div>
+                <p style="color:var(--muted);font-size:0.7em;margin-top:6px;">输入名称和 emoji，点"添加"创建新分类</p>
+            </div>
+        </aside>
+    </div>
+
+    <footer>
+        <p>© 2026 Ocean Breeze · 用 ❤️ 和 ☕ 搭建</p>
+    </footer>
+
+    <!-- 按钮 -->
+    <button class="new-post-btn" id="newPostBtn" title="写文章">✎</button>
+    <button class="theme-btn" id="themeBtn" title="切换主题">🌓</button>
+    <button class="back-to-top" id="backTop" title="回到顶部">⬆</button>
+
+    <!-- 写文章弹窗 -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal">
+            <h2 id="modalTitle">✍️ 写新文章</h2>
+            <input type="hidden" id="editId" value="">
+            <label>标题</label>
+            <input type="text" id="newTitle" placeholder="输入文章标题…">
+            <label>分类</label>
+            <select id="newCategory">
+                <option value="tech">💻 技术</option>
+                <option value="life">📷 生活</option>
+                <option value="notes">📝 随笔</option>
+            </select>
+            <label>标签（用逗号分隔，例如：JavaScript, 教程, 前端）</label>
+            <input type="text" id="newTags" placeholder="JavaScript, 教程">
+            <label>摘要 / 正文</label>
+            <textarea id="newContent" placeholder="写点什么…"></textarea>
+            <div class="btn-row">
+                <button class="btn btn-cancel" id="cancelBtn">取消</button>
+                <button class="btn btn-primary" id="saveBtn">✨ 发布文章</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ 分类数据 ============
+        const defaultCategories = [
+            { key: 'tech', name: '技术', emoji: '💻' },
+            { key: 'life', name: '生活', emoji: '📷' },
+            { key: 'notes', name: '随笔', emoji: '📝' }
+        ];
+
+        function loadCategories() {
+            const saved = localStorage.getItem('blog-categories');
+            if (saved) return JSON.parse(saved);
+            localStorage.setItem('blog-categories', JSON.stringify(defaultCategories));
+            return [...defaultCategories];
+        }
+
+        function saveCategories(cats) {
+            localStorage.setItem('blog-categories', JSON.stringify(cats));
+        }
+
+        let categories = loadCategories();
+
+        // 渲染导航栏
+        function renderNav() {
+            const nav = document.getElementById('navBar');
+            nav.innerHTML = [
+                '<a onclick="filterPosts(\'all\')" style="font-weight:700;">🏠 首页</a>',
+                ...categories.map(c => `<a onclick="filterPosts('${c.key}')">${c.emoji} ${c.name}</a>`)
+            ].join('');
+        }
+
+        // 渲染侧边栏分类列表 & 更新文章编辑器的分类下拉
+        function renderCategoryList() {
+            const list = document.getElementById('categoryList');
+            list.innerHTML = categories.map(c => `
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:6px 8px;margin-bottom:4px;border-radius:8px;background:var(--hover);font-size:0.9em;">
+                    <span>${c.emoji} ${c.name}</span>
+                    <button onclick="deleteCategory('${c.key}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9em;" title="删除分类">✕</button>
+                </div>
+            `).join('');
+
+            // 更新文章编辑器里的分类下拉
+            const catSelect = document.getElementById('newCategory');
+            catSelect.innerHTML = categories.map(c => `<option value="${c.key}">${c.emoji} ${c.name}</option>`).join('');
+        }
+
+        // 添加分类
+        document.getElementById('addCatBtn').addEventListener('click', () => {
+            const name = document.getElementById('newCatName').value.trim();
+            const emoji = document.getElementById('newCatEmoji').value.trim() || '📌';
+            if (!name) { alert('请输入分类名称！'); return; }
+            const key = name.toLowerCase().replace(/\s+/g, '-');
+            if (categories.some(c => c.key === key)) { alert('该分类已存在！'); return; }
+
+            categories.push({ key, name, emoji });
+            saveCategories(categories);
+            document.getElementById('newCatName').value = '';
+            document.getElementById('newCatEmoji').value = '';
+            renderNav();
+            renderCategoryList();
+        });
+
+        // 删除分类
+        function deleteCategory(key) {
+            if (categories.length <= 1) { alert('至少保留一个分类！'); return; }
+            if (!confirm(`确定要删除分类"${key}"吗？该分类下的文章不会被删除。`)) return;
+            categories = categories.filter(c => c.key !== key);
+            saveCategories(categories);
+
+            // 如果当前正在筛选被删除的分类，切回首页
+            if (activeCategory === key) activeCategory = 'all';
+
+            renderNav();
+            renderCategoryList();
+            renderPosts();
+            renderTagCloud();
+        }
+
+        // ============ 文章数据 ============
+        const defaultPosts = [
+            {
+                id: 1,
+                title: '我的第一篇文章：为什么开始写博客',
+                date: '2026-07-01',
+                excerpt: '一直想拥有一个属于自己的角落来记录思考和成长。这个博客就是我的数字花园，每一篇文章都是一棵正在生长的树。',
+                category: 'notes',
+                tags: ['博客', '随笔', '开始']
+            },
+            {
+                id: 2,
+                title: 'JavaScript 异步编程：从回调到 async/await',
+                date: '2026-06-25',
+                excerpt: '异步编程是 JavaScript 的核心能力之一。本文带你回顾从回调函数、Promise 到 async/await 的进化历程，以及常见陷阱。',
+                category: 'tech',
+                tags: ['JavaScript', '异步', '教程']
+            },
+            {
+                id: 3,
+                title: '周末骑行日记：城市边缘的风景',
+                date: '2026-06-18',
+                excerpt: '沿着河堤骑了 40 公里，发现了很多平时开车看不到的小路和风景。有时候慢下来，才能看到生活的细节。',
+                category: 'life',
+                tags: ['骑行', '生活', '摄影']
+            },
+            {
+                id: 4,
+                title: 'CSS Grid 布局实战技巧',
+                date: '2026-06-10',
+                excerpt: 'Grid 布局是现代前端页面搭建的利器。这篇文章整理了我在项目中常用的 Grid 模式和踩过的坑。',
+                category: 'tech',
+                tags: ['CSS', '前端', '教程']
+            },
+            {
+                id: 5,
+                title: '读《代码整洁之道》的一些感悟',
+                date: '2026-06-02',
+                excerpt: '好的代码就像好的文章，读起来应该流畅自然。这本书让我重新思考了什么是"好代码"的标准。',
+                category: 'notes',
+                tags: ['读书', '编程', '思考']
+            },
+            {
+                id: 6,
+                title: '用 PowerShell 写了一个磁盘清理脚本',
+                date: '2026-07-03',
+                excerpt: '电脑 C 盘又红了？花半小时写了个 PowerShell 脚本，自动扫描临时文件、回收站、更新缓存，一目了然。',
+                category: 'tech',
+                tags: ['PowerShell', '工具', 'Windows']
+            }
+        ];
+
+        // 从 localStorage 加载文章，首次访问时用默认文章初始化
+        function loadPosts() {
+            const saved = localStorage.getItem('blog-user-posts');
+            if (saved) {
+                return JSON.parse(saved);
+            }
+            // 首次访问：把默认文章存进去，这样所有文章都可编辑
+            localStorage.setItem('blog-user-posts', JSON.stringify(defaultPosts));
+            return [...defaultPosts];
+        }
+
+        function saveUserPosts(userPosts) {
+            localStorage.setItem('blog-user-posts', JSON.stringify(userPosts));
+        }
+
+        function getUserPosts() {
+            const saved = localStorage.getItem('blog-user-posts');
+            return saved ? JSON.parse(saved) : [];
+        }
+
+        let posts = loadPosts();
+        let allTags = [...new Set(posts.flatMap(p => p.tags))];
+        let activeTag = null;
+        let activeCategory = 'all';
+
+        function refreshAllTags() {
+            allTags = [...new Set(posts.flatMap(p => p.tags))];
+        }
+
+        // ============ 渲染文章列表 ============
+        function renderPosts() {
+            const keyword = document.getElementById('searchBox').value.toLowerCase();
+            const filtered = posts.filter(p => {
+                const matchCat = activeCategory === 'all' || p.category === activeCategory;
+                const matchTag = !activeTag || p.tags.includes(activeTag);
+                const matchSearch = !keyword ||
+                    p.title.toLowerCase().includes(keyword) ||
+                    p.excerpt.toLowerCase().includes(keyword) ||
+                    p.tags.some(t => t.toLowerCase().includes(keyword));
+                return matchCat && matchTag && matchSearch;
+            });
+
+            const container = document.getElementById('postList');
+            if (filtered.length === 0) {
+                container.innerHTML = `<div style="text-align:center;padding:60px;color:var(--muted);">
+                    <p style="font-size:3em;">🔍</p><p>没有找到匹配的文章</p></div>`;
+            } else {
+                container.innerHTML = filtered.map(p => `
+                    <article class="post">
+                        <div class="post-actions">
+                            <button class="action-btn edit-action" onclick="event.stopPropagation();editPost(${p.id})" title="编辑">✎</button>
+                            <button class="action-btn del-action" onclick="event.stopPropagation();deletePost(${p.id})" title="删除">🗑</button>
+                        </div>
+                        <div class="date">📅 ${p.date}</div>
+                        <h2>${p.title}</h2>
+                        <p style="color:var(--muted);">${p.excerpt}</p>
+                        <div class="tags">
+                            ${p.tags.map(t => `<span onclick="event.stopPropagation();filterByTag('${t}')">#${t}</span>`).join('')}
+                        </div>
+                    </article>
+                `).join('');
+            }
+
+            // 更新统计
+            document.getElementById('statPosts').textContent = posts.length;
+            document.getElementById('statTags').textContent = allTags.length;
+        }
+
+        // ============ 渲染标签云 ============
+        function renderTagCloud() {
+            const cloud = document.getElementById('tagCloud');
+            cloud.innerHTML = allTags.map(t => {
+                const cls = activeTag === t ? 'tag active' : 'tag';
+                return `<span class="${cls}" onclick="filterByTag('${t}')">${t}</span>`;
+            }).join('');
+        }
+
+        // ============ 筛选 ============
+        function filterPosts(cat) {
+            activeCategory = cat;
+            activeTag = null;
+            document.getElementById('searchBox').value = '';
+            renderPosts();
+            renderTagCloud();
+        }
+
+        function filterByTag(tag) {
+            if (activeTag === tag) {
+                activeTag = null;
+            } else {
+                activeTag = tag;
+                activeCategory = 'all';
+            }
+            document.getElementById('searchBox').value = '';
+            renderPosts();
+            renderTagCloud();
+        }
+
+        // ============ 主题切换 ============
+        const themeBtn = document.getElementById('themeBtn');
+        themeBtn.addEventListener('click', () => {
+            document.body.classList.toggle('light-mode');
+            const isLight = document.body.classList.contains('light-mode');
+            themeBtn.textContent = isLight ? '☀️' : '🌓';
+            localStorage.setItem('blog-theme', isLight ? 'light' : 'dark');
+        });
+        // 恢复主题
+        if (localStorage.getItem('blog-theme') === 'light') {
+            document.body.classList.add('light-mode');
+            themeBtn.textContent = '☀️';
+        }
+
+        // ============ 打字效果 ============
+        const phrases = [
+            '代码是写给人看的，顺带能在机器上运行',
+            'Stay hungry, stay foolish',
+            '每一天都是学习的机会',
+            '把想法变成代码，把代码变成世界'
+        ];
+        let phraseIdx = 0, charIdx = 0, isDeleting = false;
+        const typingEl = document.getElementById('typing-text');
+
+        function typeEffect() {
+            const current = phrases[phraseIdx];
+            if (isDeleting) {
+                typingEl.textContent = current.substring(0, charIdx - 1);
+                charIdx--;
+            } else {
+                typingEl.textContent = current.substring(0, charIdx + 1);
+                charIdx++;
+            }
+
+            let speed = isDeleting ? 40 : 80;
+            if (!isDeleting && charIdx === current.length) {
+                speed = 2000;
+                isDeleting = true;
+            } else if (isDeleting && charIdx === 0) {
+                isDeleting = false;
+                phraseIdx = (phraseIdx + 1) % phrases.length;
+                speed = 400;
+            }
+            setTimeout(typeEffect, speed);
+        }
+        typeEffect();
+
+        // ============ 粒子背景 ============
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.offsetWidth;
+            canvas.height = canvas.parentElement.offsetHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            initParticles();
+        });
+
+        function initParticles() {
+            particles = [];
+            const count = Math.floor(canvas.width / 20);
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    r: Math.random() * 2 + 0.5,
+                    vx: (Math.random() - 0.5) * 0.5,
+                    vy: (Math.random() - 0.5) * 0.5,
+                    alpha: Math.random() * 0.5 + 0.3
+                });
+            }
+        }
+        initParticles();
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const isLight = document.body.classList.contains('light-mode');
+            const color = isLight ? '0, 119, 182' : '0, 180, 216';
+
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = canvas.width;
+                if (p.x > canvas.width) p.x = 0;
+                if (p.y < 0) p.y = canvas.height;
+                if (p.y > canvas.height) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${color}, ${p.alpha})`;
+                ctx.fill();
+
+                // 连线
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = p.x - particles[j].x;
+                    const dy = p.y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.strokeStyle = `rgba(${color}, ${0.08 * (1 - dist / 100)})`;
+                        ctx.stroke();
+                    }
+                }
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        // ============ 阅读进度条 ============
+        window.addEventListener('scroll', () => {
+            const scrollTop = document.documentElement.scrollTop;
+            const scrollHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+            document.getElementById('progressBar').style.width = progress + '%';
+
+            // 回到顶部按钮
+            document.getElementById('backTop').classList.toggle('visible', scrollTop > 400);
+        });
+
+        document.getElementById('backTop').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // ============ 模拟访客数 ============
+        const today = new Date().toDateString();
+        const stored = JSON.parse(localStorage.getItem('visitor') || '{}');
+        if (stored.date !== today) {
+            stored.date = today;
+            stored.count = Math.floor(Math.random() * 50) + 10;
+            localStorage.setItem('visitor', JSON.stringify(stored));
+        }
+        document.getElementById('visitorCount').innerHTML =
+            `👀 今日访客：<strong style="color:var(--accent);">${stored.count}</strong>`;
+
+        // ============ 新增/编辑文章弹窗 ============
+        const modalOverlay = document.getElementById('modalOverlay');
+        const newPostBtn = document.getElementById('newPostBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const editIdInput = document.getElementById('editId');
+
+        function openModal() {
+            editIdInput.value = '';
+            document.getElementById('modalTitle').textContent = '✍️ 写新文章';
+            saveBtn.textContent = '✨ 发布文章';
+            modalOverlay.classList.add('active');
+            document.getElementById('newTitle').focus();
+        }
+        function closeModal() {
+            modalOverlay.classList.remove('active');
+            document.getElementById('editId').value = '';
+            document.getElementById('newTitle').value = '';
+            document.getElementById('newTags').value = '';
+            document.getElementById('newContent').value = '';
+            document.getElementById('newCategory').value = 'tech';
+        }
+
+        function editPost(id) {
+            const userPosts = getUserPosts();
+            const post = userPosts.find(p => p.id === id);
+            if (!post) return;
+
+            editIdInput.value = post.id;
+            document.getElementById('modalTitle').textContent = '✏️ 编辑文章';
+            saveBtn.textContent = '💾 保存修改';
+            document.getElementById('newTitle').value = post.title;
+            document.getElementById('newCategory').value = post.category;
+            document.getElementById('newTags').value = post.tags.join(', ');
+            document.getElementById('newContent').value = post.excerpt;
+            modalOverlay.classList.add('active');
+            document.getElementById('newTitle').focus();
+        }
+
+        newPostBtn.addEventListener('click', openModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) closeModal();
+        });
+
+        // ESC 关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalOverlay.classList.contains('active')) closeModal();
+        });
+
+        // 保存（新增或更新）
+        saveBtn.addEventListener('click', () => {
+            const title = document.getElementById('newTitle').value.trim();
+            const category = document.getElementById('newCategory').value;
+            const tagsRaw = document.getElementById('newTags').value.trim();
+            const content = document.getElementById('newContent').value.trim();
+            const editingId = editIdInput.value;
+
+            if (!title) { alert('请输入文章标题！'); return; }
+            if (!content) { alert('请输入文章内容！'); return; }
+
+            const tags = tagsRaw
+                ? tagsRaw.split(/[,，]/).map(t => t.trim()).filter(Boolean)
+                : ['未分类'];
+
+            const userPosts = getUserPosts();
+
+            if (editingId) {
+                // 编辑模式：更新已有文章
+                const idx = userPosts.findIndex(p => p.id === parseInt(editingId));
+                if (idx !== -1) {
+                    userPosts[idx].title = title;
+                    userPosts[idx].category = category;
+                    userPosts[idx].tags = tags;
+                    userPosts[idx].excerpt = content;
+                }
+            } else {
+                // 新建模式
+                const newId = userPosts.length > 0
+                    ? Math.max(...userPosts.map(p => p.id)) + 1
+                    : 1000;
+
+                const now = new Date();
+                const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+                userPosts.unshift({ id: newId, title, date: dateStr, excerpt: content, category, tags });
+            }
+
+            saveUserPosts(userPosts);
+            posts = loadPosts();
+            refreshAllTags();
+            closeModal();
+            renderPosts();
+            renderTagCloud();
+        });
+
+        // 删除文章
+        function deletePost(id) {
+            if (!confirm('确定要删除这篇文章吗？此操作不可恢复。')) return;
+            let userPosts = getUserPosts();
+            userPosts = userPosts.filter(p => p.id !== id);
+            saveUserPosts(userPosts);
+            posts = loadPosts();
+            refreshAllTags();
+            renderPosts();
+            renderTagCloud();
+        }
+
+        // ============ 初始化 ============
+        renderNav();
+        renderCategoryList();
+        renderPosts();
+        renderTagCloud();
+    </script>
+</body>
+</html>
