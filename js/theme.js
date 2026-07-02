@@ -228,9 +228,9 @@
                     particles.push({
                         x: Math.random() * canvas.width,
                         y: Math.random() * canvas.height,
-                        r: isShootingStar ? 1.2 : Math.random() * 2.2 + 0.3,
-                        vx: isShootingStar ? -(Math.random() * 2 + 2) : (Math.random() - 0.5) * 0.15,
-                        vy: isShootingStar ? (Math.random() - 0.5) * 0.3 : (Math.random() - 0.5) * 0.15,
+                        r: isShootingStar ? 1.0 : Math.random() * 2.2 + 0.3,
+                        vx: isShootingStar ? -(Math.random() * 3 + 2.5) : (Math.random() - 0.5) * 0.15,
+                        vy: isShootingStar ? (Math.random() - 0.5) * 0.4 : (Math.random() - 0.5) * 0.15,
                         alpha: Math.random() * 0.7 + 0.3,
                         twinkleSpeed: Math.random() * 0.03 + 0.005,
                         twinklePhase: Math.random() * Math.PI * 2,
@@ -343,23 +343,74 @@
                     if (p.isShootingStar) {
                         p.x += p.vx;
                         p.y += p.vy;
-                        if (p.x < -40 || p.y < -40 || p.y > canvas.height + 40) {
+                        if (p.x < -60 || p.y < -40 || p.y > canvas.height + 40) {
                             // 重置流星位置
                             p.x = canvas.width + Math.random() * 100;
                             p.y = Math.random() * canvas.height;
-                            p.vx = -(Math.random() * 2 + 2);
-                            p.vy = (Math.random() - 0.5) * 0.3;
+                            p.vx = -(Math.random() * 3 + 2.5);
+                            p.vy = (Math.random() - 0.5) * 0.4;
+                            p.trail = [];
                         }
-                        // 流星轨迹（尾迹在移动方向的反方向）
+
+                        // 存储轨迹点
+                        if (!p.trail) p.trail = [];
+                        p.trail.push({ x: p.x, y: p.y, life: 1 });
+                        // 限制轨迹长度
+                        if (p.trail.length > 30) p.trail.shift();
+
+                        // 绘制轨迹：从旧到新，头部最亮
+                        const trailLen = p.trail.length;
+                        if (trailLen > 1) {
+                            for (let i = 1; i < trailLen; i++) {
+                                const prev = p.trail[i - 1];
+                                const curr = p.trail[i];
+                                const progress = i / trailLen; // 0=尾部, 1=头部
+                                const segAlpha = progress * p.alpha;
+                                const segWidth = progress * p.r * 2;
+
+                                ctx.beginPath();
+                                ctx.moveTo(prev.x, prev.y);
+                                ctx.lineTo(curr.x, curr.y);
+                                ctx.strokeStyle = `rgba(${color}, ${segAlpha * 0.6})`;
+                                ctx.lineWidth = segWidth;
+                                ctx.lineCap = 'round';
+                                ctx.stroke();
+                            }
+
+                            // 外发光层（更宽更透明）
+                            for (let i = Math.max(1, trailLen - 8); i < trailLen; i++) {
+                                const prev = p.trail[i - 1];
+                                const curr = p.trail[i];
+                                const progress = i / trailLen;
+                                const glowAlpha = progress * p.alpha * 0.25;
+                                const glowWidth = progress * p.r * 5;
+
+                                ctx.beginPath();
+                                ctx.moveTo(prev.x, prev.y);
+                                ctx.lineTo(curr.x, curr.y);
+                                ctx.strokeStyle = `rgba(${color}, ${glowAlpha})`;
+                                ctx.lineWidth = glowWidth;
+                                ctx.lineCap = 'round';
+                                ctx.stroke();
+                            }
+                        }
+
+                        // 更新轨迹点生命值
+                        p.trail.forEach(t => t.life -= 0.03);
+
+                        // 流星头部亮白核心
+                        const headGrad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+                        headGrad.addColorStop(0, `rgba(255, 255, 255, ${p.alpha})`);
+                        headGrad.addColorStop(0.3, `rgba(255, 255, 255, ${p.alpha * 0.6})`);
+                        headGrad.addColorStop(1, `rgba(${color}, 0)`);
                         ctx.beginPath();
-                        ctx.moveTo(p.x, p.y);
-                        ctx.lineTo(p.x - p.vx * 8, p.y - p.vy * 8);
-                        ctx.strokeStyle = `rgba(${color}, ${p.alpha * 0.7})`;
-                        ctx.lineWidth = p.r;
-                        ctx.stroke();
-                        // 流星头部
+                        ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+                        ctx.fillStyle = headGrad;
+                        ctx.fill();
+
+                        // 头部高亮小点
                         ctx.beginPath();
-                        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                        ctx.arc(p.x, p.y, p.r * 0.6, 0, Math.PI * 2);
                         ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
                         ctx.fill();
                     } else {
