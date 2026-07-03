@@ -3,7 +3,6 @@
         // ============ 照片墙 ============
         const photoKey = 'blog-photos';
 
-        // 照片专用分类
         const defaultPhotoCategories = [
             { key: 'scenery', name: '风景', emoji: '🏞️' },
             { key: 'portrait', name: '人像', emoji: '👤' },
@@ -19,6 +18,7 @@
         }
         function savePhotoCategories(arr) {
             localStorage.setItem('photo-categories', JSON.stringify(arr));
+            if (typeof autoSync === 'function') autoSync();
         }
 
         let photoCategories = loadPhotoCategories();
@@ -30,7 +30,10 @@
             const saved = localStorage.getItem(photoKey);
             return saved ? JSON.parse(saved) : [];
         }
-        function savePhotos(arr) { localStorage.setItem(photoKey, JSON.stringify(arr)); }
+        function savePhotos(arr) {
+            localStorage.setItem(photoKey, JSON.stringify(arr));
+            if (typeof autoSync === 'function') autoSync();
+        }
 
         function getAllPhotoTags() {
             return [...new Set(loadPhotos().flatMap(p => p.tags || []))];

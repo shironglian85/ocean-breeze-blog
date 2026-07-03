@@ -16,6 +16,7 @@
 
         function saveCategories(cats) {
             localStorage.setItem('blog-categories', JSON.stringify(cats));
+            if (typeof autoSync === 'function') autoSync();
         }
 
         let categories = loadCategories();
@@ -275,19 +276,16 @@
             }
         ];
 
-        // 从 localStorage 加载文章，首次访问时用默认文章初始化
         function loadPosts() {
             const saved = localStorage.getItem('blog-user-posts');
-            if (saved) {
-                return JSON.parse(saved);
-            }
-            // 首次访问：把默认文章存进去，这样所有文章都可编辑
+            if (saved) return JSON.parse(saved);
             localStorage.setItem('blog-user-posts', JSON.stringify(defaultPosts));
             return [...defaultPosts];
         }
 
         function saveUserPosts(userPosts) {
             localStorage.setItem('blog-user-posts', JSON.stringify(userPosts));
+            if (typeof autoSync === 'function') autoSync();
         }
 
         function getUserPosts() {

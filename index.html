@@ -670,6 +670,25 @@
         .emoji-grid span:hover { background: var(--hover); transform: scale(1.2); }
 
         /* 页脚 */
+        /* 数据同步按钮 */
+        .sync-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--hover);
+            color: var(--accent);
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .sync-btn:hover {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
         /* === 照片墙 === */
         #photoSection { display: none; }
         #photoSection.active { display: block; }
@@ -876,6 +895,87 @@
             transform: scale(1.05);
         }
 
+        /* === 页面宠物像素小猫 === */
+        #pagePet {
+            position: fixed;
+            z-index: 199;
+            pointer-events: auto;
+            cursor: pointer;
+            user-select: none;
+            transition: none;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+        }
+        #pagePet canvas {
+            width: 72px;
+            height: 60px;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+            transition: transform 0.1s;
+        }
+        /* 走路时身体弹跳 */
+        #pagePet.walking canvas {
+            animation: cat-walk 0.4s ease-in-out infinite;
+        }
+        @keyframes cat-walk {
+            0%,100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-3px) rotate(1deg); }
+            75% { transform: translateY(-1px) rotate(-1deg); }
+        }
+        /* 待机时微呼吸 */
+        #pagePet.idling canvas {
+            animation: cat-breathe 2.5s ease-in-out infinite;
+        }
+        @keyframes cat-breathe {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+        }
+        /* 眨眼 */
+        #pagePet.blink canvas {
+            animation: cat-blink 0.1s ease;
+        }
+        @keyframes cat-blink {
+            0%,100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
+        /* 拖动中 */
+        #pagePet.dragging {
+            cursor: grabbing;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
+            transition: none;
+        }
+        #pagePet.dragging canvas {
+            animation: none !important;
+            transform: scale(1.08);
+        }
+        /* 被摸 */
+        #pagePet.petted canvas {
+            animation: pet-bounce 0.45s ease;
+        }
+        @keyframes pet-bounce {
+            0%,100% { transform: scale(1); }
+            25% { transform: scale(1.2); }
+            55% { transform: scale(0.9); }
+            75% { transform: scale(1.05); }
+        }
+        /* 爱心粒子 */
+        .cat-hearts {
+            position: absolute;
+            top: -5px; left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+        }
+        .heart-particle {
+            position: absolute;
+            font-size: 1.1em;
+            animation: heart-float 1s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes heart-float {
+            0% { opacity: 1; transform: translateY(0) scale(0.4); }
+            40% { opacity: 1; transform: translateY(-25px) scale(1.3); }
+            100% { opacity: 0; transform: translateY(-55px) scale(0.7); }
+        }
+
         footer {
             text-align: center;
             padding: 30px;
@@ -963,6 +1063,22 @@
                 <p style="color:var(--muted);">📄 文章数：<strong id="statPosts" style="color:var(--accent);">0</strong></p>
                 <p style="color:var(--muted);">🏷️ 标签数：<strong id="statTags" style="color:var(--accent);">0</strong></p>
                 <p style="color:var(--muted);" id="visitorCount">👀 今日访客：<strong style="color:var(--accent);">--</strong></p>
+            </div>
+
+            <!-- 数据同步 -->
+            <div>
+                <h3>☁️ 数据同步</h3>
+                <div id="syncStatus" style="font-size:0.75em;color:var(--muted);margin-bottom:6px;"></div>
+                <div id="tokenArea" style="display:none;margin-bottom:8px;">
+                    <input type="password" id="tokenInput" placeholder="粘贴 GitHub Token…" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8em;outline:none;margin-bottom:4px;">
+                    <button class="sync-btn" onclick="saveToken()" style="width:100%;">🔑 启用云同步</button>
+                </div>
+                <div id="syncBtns" style="display:flex;gap:8px;">
+                    <button class="sync-btn" onclick="manualSync()" style="flex:1;" title="立即同步到云端">🔄 同步</button>
+                    <button class="sync-btn" id="exportBtn" onclick="exportData()" style="flex:1;">📤 导出</button>
+                    <button class="sync-btn" id="importBtn" onclick="document.getElementById('importFile').click()" style="flex:1;">📥 导入</button>
+                    <input type="file" id="importFile" accept=".json" onchange="importData(this)" style="display:none;">
+                </div>
             </div>
 
             <!-- 分类管理 -->
@@ -1075,16 +1191,86 @@
     </div>
 
 
+    <script src="js/sync.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/blog.js"></script>
     <script src="js/photos.js"></script>
+    <script src="js/pet.js"></script>
     <script>
-        // ============ 初始化 ============
-        renderNav();
-        renderCategoryList();
-        renderCategoryFilters();
-        renderPosts();
-        renderTagCloud();
+        // ============ 云端同步初始化 ============
+        async function initApp() {
+            // 先从云端拉取最新数据
+            const synced = await cloudInit();
+            if (synced) {
+                // 刷新内存中的数据
+                if (typeof categories !== 'undefined') {
+                    categories = JSON.parse(localStorage.getItem('blog-categories') || '[]');
+                }
+                if (typeof posts !== 'undefined') {
+                    posts = JSON.parse(localStorage.getItem('blog-user-posts') || '[]');
+                    refreshAllTags();
+                }
+                if (typeof photoCategories !== 'undefined') {
+                    photoCategories = JSON.parse(localStorage.getItem('photo-categories') || '[]');
+                }
+            }
+            // 渲染页面
+            renderNav();
+            renderCategoryList();
+            renderCategoryFilters();
+            renderPosts();
+            renderTagCloud();
+        }
+
+        // 启动
+        initApp();
+
+        // ============ 数据导入导出 ============
+        function exportData() {
+            const data = {
+                version: 1,
+                date: new Date().toISOString(),
+                posts: JSON.parse(localStorage.getItem('blog-user-posts') || '[]'),
+                categories: JSON.parse(localStorage.getItem('blog-categories') || '[]'),
+                photos: JSON.parse(localStorage.getItem('blog-photos') || '[]'),
+                photoCategories: JSON.parse(localStorage.getItem('photo-categories') || '[]'),
+                palette: localStorage.getItem('blog-palette') || 'sunset',
+                mode: localStorage.getItem('blog-mode') || 'dark',
+                phrases: JSON.parse(localStorage.getItem('blog-phrases') || '[]'),
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'ocean-breeze-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            if (!confirm('导入将覆盖当前所有数据，确定继续？')) { input.value = ''; return; }
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.posts) localStorage.setItem('blog-user-posts', JSON.stringify(data.posts));
+                    if (data.categories) localStorage.setItem('blog-categories', JSON.stringify(data.categories));
+                    if (data.photos) localStorage.setItem('blog-photos', JSON.stringify(data.photos));
+                    if (data.photoCategories) localStorage.setItem('photo-categories', JSON.stringify(data.photoCategories));
+                    if (data.palette) localStorage.setItem('blog-palette', data.palette);
+                    if (data.mode) localStorage.setItem('blog-mode', data.mode);
+                    if (data.phrases) localStorage.setItem('blog-phrases', JSON.stringify(data.phrases));
+                    alert('导入成功！页面即将刷新。');
+                    location.reload();
+                } catch(err) {
+                    alert('文件格式错误，导入失败！');
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
     </script>
 </body>
 </html>

@@ -27,6 +27,13 @@
         let currentTheme = localStorage.getItem('blog-palette') || 'sunset';
         let isLightMode = localStorage.getItem('blog-mode') === 'light';
 
+        // 持久化设置
+        function persistSettings() {
+            localStorage.setItem('blog-palette', currentTheme);
+            localStorage.setItem('blog-mode', isLightMode ? 'light' : 'dark');
+            if (typeof autoSync === 'function') autoSync();
+        }
+
         function applyTheme() {
             const palette = themePalettes[currentTheme];
             const colors = isLightMode ? palette.light : palette.dark;
@@ -49,7 +56,7 @@
             document.title = `${themeName} · ${isLightMode ? '浅色' : '深色'}`;
             document.getElementById('blogTitle').textContent = themeName;
             document.getElementById('blogFooter').innerHTML = `© 2026 ${themeName.split(' ').slice(1).join(' ')} · 用 ❤️ 和 ☕ 搭建`;
-            localStorage.setItem('blog-mode', isLightMode ? 'light' : 'dark');
+            persistSettings();
             // 主题切换后重建粒子
             if (typeof initParticles === 'function') initParticles();
         }
