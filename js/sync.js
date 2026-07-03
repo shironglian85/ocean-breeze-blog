@@ -71,30 +71,35 @@ async function cloudWrite(data) {
     }
 }
 
-// 初始化：从云端加载数据
+// 初始化：从云端加载数据（云端有数据才覆盖本地）
 async function cloudInit() {
     const cloud = await cloudRead();
     if (!cloud) return false;
 
-    // 对比本地和云端，云端优先
-    if (cloud.posts && (!localStorage.getItem('blog-user-posts') || cloud.posts.length > 0)) {
+    let updated = false;
+    // 只在云端数据非空时才覆盖本地
+    if (cloud.posts && cloud.posts.length > 0) {
         localStorage.setItem('blog-user-posts', JSON.stringify(cloud.posts));
+        updated = true;
     }
     if (cloud.categories && cloud.categories.length > 0) {
         localStorage.setItem('blog-categories', JSON.stringify(cloud.categories));
+        updated = true;
     }
-    if (cloud.photos) {
+    if (cloud.photos && cloud.photos.length > 0) {
         localStorage.setItem('blog-photos', JSON.stringify(cloud.photos));
+        updated = true;
     }
     if (cloud.photoCategories && cloud.photoCategories.length > 0) {
         localStorage.setItem('photo-categories', JSON.stringify(cloud.photoCategories));
+        updated = true;
     }
     if (cloud.palette) localStorage.setItem('blog-palette', cloud.palette);
     if (cloud.mode) localStorage.setItem('blog-mode', cloud.mode);
     if (cloud.phrases && cloud.phrases.length > 0) {
         localStorage.setItem('blog-phrases', JSON.stringify(cloud.phrases));
     }
-    return true;
+    return updated;
 }
 
 // 上传本地数据到云端
@@ -117,5 +122,38 @@ let syncTimer = null;
 function autoSync() {
     if (!hasToken()) return;
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => cloudUpload(), 2000);
+    syncTimer = setTimeout(() => cloudUpload(), 1500);
 }
+
+// 关闭页面前强制同步
+window.addEventListener('beforeunload', () => {
+    if (!hasToken()) return;
+    // 同步请求（用 sendBeacon 或同步 XHR）
+    const data = {
+        posts: JSON.parse(localStorage.getItem('blog-user-posts') || '[]'),
+        categories: JSON.parse(localStorage.getItem('blog-categories') || '[]'),
+        photos: JSON.parse(localStorage.getItem('blog-photos') || '[]'),
+        photoCategories: JSON.parse(localStorage.getItem('photo-categories') || '[]'),
+        palette: localStorage.getItem('blog-palette') || 'sunset',
+        mode: localStorage.getItem('blog-mode') || 'dark',
+        phrases: JSON.parse(localStorage.getItem('blog-phrases') || '[]'),
+    };
+    const token = localStorage.getItem('gh-token');
+    if (!token) return;
+    navigator.sendBeacon(GIST_API, JSON.stringify({
+        files: { 'blog-data.json': { content: JSON.stringify(data) } }
+    }));
+    // sendBeacon 不支持自定义 header，所以用 fetch with keepalive
+    fetch(GIST_API, {
+        method: 'PATCH',
+        keepalive: true,
+        headers: {
+            'Accept': 'application/vnd.github+json',
+            'Authorization': 'Bearer ' + token,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            files: { 'blog-data.json': { content: JSON.stringify(data) } }
+        })
+    });
+});
