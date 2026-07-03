@@ -33,7 +33,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('tokenArea').style.display = 'none';
         document.getElementById('syncStatus').textContent = '✅ 云同步就绪';
     } else {
-        document.getElementById('syncStatus').textContent = '💡 点击"同步"并输入 Token';
+        document.getElementById('tokenArea').style.display = '';
+        document.getElementById('syncStatus').textContent = '💡 请粘贴 Token 以启用云同步';
     }
 });
 
