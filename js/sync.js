@@ -28,7 +28,7 @@ function manualSync() {
 }
 
 // 页面加载时检查 token
-document.addEventListener('DOMContentLoaded', function() {
+function updateSyncUI() {
     if (hasToken()) {
         document.getElementById('tokenArea').style.display = 'none';
         document.getElementById('syncStatus').textContent = '✅ 云同步就绪';
@@ -36,7 +36,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('tokenArea').style.display = '';
         document.getElementById('syncStatus').textContent = '💡 请粘贴 Token 以启用云同步';
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateSyncUI);
+} else {
+    updateSyncUI();
+}
 
 // 读写 Gist
 async function cloudRead() {
