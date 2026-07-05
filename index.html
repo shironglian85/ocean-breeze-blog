@@ -838,9 +838,9 @@
         /* 照片文件上传 */
         .photo-upload-row {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             gap: 10px;
-            margin-bottom: 4px;
+            flex-wrap: wrap;
         }
         .photo-upload-row input[type="file"] {
             display: none;
@@ -870,6 +870,8 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            max-width: 200px;
+            flex-shrink: 1;
         }
         .photo-preview {
             margin: 10px 0;
