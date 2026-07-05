@@ -321,7 +321,7 @@
                     <p style="font-size:3em;">🔍</p><p>没有找到匹配的文章</p></div>`;
             } else {
                 container.innerHTML = filtered.map(p => `
-                    <article class="post">
+                    <article class="post" id="post-${p.id}">
                         <div class="post-actions">
                             <button class="action-btn edit-action" onclick="event.stopPropagation();editPost(${p.id})" title="编辑">✎</button>
                             <button class="action-btn del-action" onclick="event.stopPropagation();deletePost(${p.id})" title="删除">🗑</button>
@@ -339,6 +339,58 @@
             // 更新统计
             document.getElementById('statPosts').textContent = posts.length;
             document.getElementById('statTags').textContent = allTags.length;
+
+            // 生成文章目录
+            renderTOC(filtered);
+        }
+
+        // ============ 文章目录 TOC ============
+        function renderTOC(visiblePosts) {
+            var tocPanel = document.getElementById('tocPanel');
+            var tocNav = document.getElementById('tocNav');
+            var headings = [];
+
+            visiblePosts.forEach(function(p) {
+                var lines = (p.excerpt || '').split('\n');
+                lines.forEach(function(line) {
+                    var m = line.match(/^(#{1,3})\s+(.+)/);
+                    if (m) {
+                        headings.push({
+                            level: m[1].length,
+                            text: m[2],
+                            postId: p.id,
+                            postTitle: p.title
+                        });
+                    }
+                });
+            });
+
+            if (headings.length === 0) {
+                tocPanel.style.display = 'none';
+                return;
+            }
+            tocPanel.style.display = '';
+
+            tocNav.innerHTML = headings.map(function(h) {
+                var indent = (h.level - 1) * 12;
+                return '<a href="#" onclick="scrollToHeading(\'' + h.postId + '\')" ' +
+                    'style="display:block;padding:3px 0 3px ' + indent + 'px;color:var(--accent);text-decoration:none;' +
+                    'border-radius:6px;transition:all 0.2s;font-size:' + (1 - h.level*0.06) + 'em;" ' +
+                    'onmouseover="this.style.background=\'var(--hover)\'" ' +
+                    'onmouseout="this.style.background=\'transparent\'">' +
+                    (h.level === 1 ? '📄 ' : h.level === 2 ? '└ ' : '  └ ') + h.text +
+                    '</a>';
+            }).join('');
+        }
+
+        // 滚动到指定文章
+        function scrollToHeading(postId) {
+            var el = document.getElementById('post-' + postId);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                el.style.boxShadow = '0 0 30px rgba(var(--glow),0.6)';
+                setTimeout(function() { el.style.boxShadow = ''; }, 2000);
+            }
         }
 
         // ============ 渲染标签云 ============
@@ -380,19 +432,12 @@
         const saveBtn = document.getElementById('saveBtn');
         const editIdInput = document.getElementById('editId');
 
-        function openModal() {
-            editIdInput.value = '';
-            document.getElementById('modalTitle').textContent = '✍️ 写新文章';
-            saveBtn.textContent = '✨ 发布文章';
-            modalOverlay.classList.add('active');
-            document.getElementById('newTitle').focus();
-        }
         function closeModal() {
             modalOverlay.classList.remove('active');
             document.getElementById('editId').value = '';
             document.getElementById('newTitle').value = '';
             document.getElementById('newTags').value = '';
-            document.getElementById('newContent').value = '';
+            setEditorContent('');
             document.getElementById('newCategory').value = 'tech';
         }
 
@@ -407,7 +452,7 @@
             document.getElementById('newTitle').value = post.title;
             document.getElementById('newCategory').value = post.category;
             document.getElementById('newTags').value = post.tags.join(', ');
-            document.getElementById('newContent').value = post.excerpt;
+            setTimeout(function() { setEditorContent(post.excerpt); }, 150);
             modalOverlay.classList.add('active');
             document.getElementById('newTitle').focus();
         }
@@ -434,7 +479,7 @@
             const title = document.getElementById('newTitle').value.trim();
             const category = document.getElementById('newCategory').value;
             const tagsRaw = document.getElementById('newTags').value.trim();
-            const content = document.getElementById('newContent').value.trim();
+            const content = getEasyMDE().value().trim();
             const editingId = editIdInput.value;
 
             if (!title) { alert('请输入文章标题！'); return; }
@@ -473,6 +518,74 @@
             closeModal();
             renderPosts();
             renderTagCloud();
+        });
+
+        // ============ 图片粘贴/拖拽支持 ============
+        // EasyMDE 实例
+        var easyMDE = null;
+
+        function getEasyMDE() {
+            if (!easyMDE) {
+                easyMDE = new EasyMDE({
+                    element: document.getElementById('newContent'),
+                    spellChecker: false,
+                    placeholder: '写点什么…支持 Markdown 语法',
+                    toolbar: ['bold','italic','heading','|','quote','unordered-list','ordered-list','|','link','image','|','preview','side-by-side','fullscreen','|','guide'],
+                    status: false,
+                    minHeight: '200px',
+                    maxHeight: '400px',
+                });
+            }
+            return easyMDE;
+        }
+
+        function openModal() {
+            editIdInput.value = '';
+            document.getElementById('modalTitle').textContent = '✍️ 写新文章';
+            saveBtn.textContent = '✨ 发布文章';
+            modalOverlay.classList.add('active');
+            var mde = getEasyMDE();
+            setTimeout(function() { mde.codemirror.focus(); }, 100);
+        }
+
+        function setEditorContent(val) {
+            var mde = getEasyMDE();
+            mde.value(val);
+        }
+
+
+        function handleImageFile(file) {
+            if (!file || !file.type.match(/^image\//)) return;
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var b64 = e.target.result.split(',')[1];
+                var md = '![](data:image/png;base64,' + b64 + ')';
+                var mde = getEasyMDE();
+                var cm = mde.codemirror;
+                cm.replaceSelection(md);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // 粘贴 + 拖拽图片（挂在 textarea 父容器上，EasyMDE 接管后 textarea 被隐藏）
+        document.addEventListener('paste', function(e) {
+            if (!modalOverlay.classList.contains('active')) return;
+            var items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.match(/^image\//)) {
+                    e.preventDefault();
+                    handleImageFile(items[i].getAsFile());
+                    return;
+                }
+            }
+        });
+        document.addEventListener('dragover', function(e) { if (modalOverlay.classList.contains('active')) e.preventDefault(); });
+        document.addEventListener('drop', function(e) {
+            if (!modalOverlay.classList.contains('active')) return;
+            e.preventDefault();
+            var files = e.dataTransfer && e.dataTransfer.files;
+            if (files && files[0]) handleImageFile(files[0]);
         });
 
         // 删除文章

@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>我的博客 - Ocean Breeze</title>
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
     <style>
         :root {
             --bg: #1a1008;
@@ -138,13 +139,17 @@
         .container {
             max-width: 1100px;
             margin: 0 auto;
-            padding: 30px 20px;
+            padding: 30px 24px;
             display: grid;
-            grid-template-columns: 1fr 280px;
-            gap: 24px;
+            grid-template-columns: 1fr 300px;
+            gap: 28px;
             align-items: start;
         }
-        @media (max-width: 768px) {
+        .sidebar {
+            min-width: 0;
+            word-break: break-word;
+        }
+        @media (max-width: 900px) {
             .container { grid-template-columns: 1fr; }
         }
 
@@ -351,9 +356,12 @@
             background: var(--card);
             border: 1px solid var(--border);
             border-radius: 14px;
-            padding: 22px;
-            margin-bottom: 20px;
+            padding: 18px;
+            margin-bottom: 18px;
             transition: background 0.4s;
+        }
+        .sidebar > * > * {
+            max-width: 100%;
         }
         .sidebar h3 {
             color: var(--accent2);
@@ -672,16 +680,18 @@
         /* 页脚 */
         /* 数据同步按钮 */
         .sync-btn {
-            padding: 8px 16px;
+            padding: 8px 10px;
             border-radius: 20px;
             border: 1px solid var(--border);
             background: var(--hover);
             color: var(--accent);
-            font-size: 0.85em;
+            font-size: 0.82em;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .sync-btn:hover {
             background: var(--accent);
@@ -694,19 +704,22 @@
         #photoSection.active { display: block; }
         #blogSection.hidden { display: none; }
         .photo-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 12px;
+            column-count: 4;
+            column-gap: 12px;
         }
+        @media (max-width: 900px) { .photo-grid { column-count: 3; } }
+        @media (max-width: 600px) { .photo-grid { column-count: 2; } }
         .photo-card {
             position: relative;
             border-radius: 10px;
             overflow: hidden;
             cursor: pointer;
-            aspect-ratio: 4/3;
+            break-inside: avoid;
+            margin-bottom: 12px;
             background: var(--hover);
             transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease;
             z-index: 1;
+            display: block;
         }
         .photo-card:hover {
             transform: scale(1.18);
@@ -879,7 +892,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            aspect-ratio: 4/3;
+            min-height: 120px;
             border-radius: 10px;
             border: 2px dashed var(--border);
             background: var(--hover);
@@ -905,15 +918,15 @@
             transition: none;
             filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));
         }
-        #pagePet canvas {
+        #pagePet img {
             width: 72px;
             height: 60px;
             image-rendering: pixelated;
             image-rendering: crisp-edges;
-            transition: transform 0.1s;
+            display: block;
         }
         /* 走路时身体弹跳 */
-        #pagePet.walking canvas {
+        #pagePet.walking img {
             animation: cat-walk 0.4s ease-in-out infinite;
         }
         @keyframes cat-walk {
@@ -922,7 +935,7 @@
             75% { transform: translateY(-1px) rotate(-1deg); }
         }
         /* 待机时微呼吸 */
-        #pagePet.idling canvas {
+        #pagePet.idling img {
             animation: cat-breathe 2.5s ease-in-out infinite;
         }
         @keyframes cat-breathe {
@@ -930,7 +943,7 @@
             50% { transform: scale(1.04); }
         }
         /* 眨眼 */
-        #pagePet.blink canvas {
+        #pagePet.blink img {
             animation: cat-blink 0.1s ease;
         }
         @keyframes cat-blink {
@@ -943,12 +956,12 @@
             filter: drop-shadow(0 8px 16px rgba(0,0,0,0.35));
             transition: none;
         }
-        #pagePet.dragging canvas {
+        #pagePet.dragging img {
             animation: none !important;
             transform: scale(1.08);
         }
         /* 被摸 */
-        #pagePet.petted canvas {
+        #pagePet.petted img {
             animation: pet-bounce 0.45s ease;
         }
         @keyframes pet-bounce {
@@ -983,6 +996,95 @@
             font-size: 0.9em;
             border-top: 1px solid var(--border);
         }
+
+        /* === EasyMDE 暗色主题 === */
+        .EasyMDEContainer { border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+        .EasyMDEContainer .editor-toolbar {
+            background: var(--hover);
+            border: none;
+            border-bottom: 1px solid var(--border);
+            border-radius: 10px 10px 0 0;
+            padding: 6px 8px;
+        }
+        .EasyMDEContainer .editor-toolbar button {
+            color: var(--text) !important;
+            background: transparent;
+            border: 1px solid transparent !important;
+            border-radius: 6px;
+            margin: 2px;
+            transition: all 0.2s;
+        }
+        .EasyMDEContainer .editor-toolbar button:hover {
+            background: rgba(var(--glow), 0.2) !important;
+            border-color: rgba(var(--glow), 0.4) !important;
+        }
+        .EasyMDEContainer .editor-toolbar button.active {
+            background: rgba(var(--glow), 0.3) !important;
+            border-color: var(--accent) !important;
+        }
+        .EasyMDEContainer .editor-toolbar i.separator {
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            margin: 0 6px;
+        }
+        .EasyMDEContainer .CodeMirror {
+            background: var(--bg) !important;
+            color: var(--text) !important;
+            border: none;
+            font-family: 'Segoe UI','PingFang SC','Microsoft YaHei',monospace;
+            font-size: 0.95em;
+        }
+        .EasyMDEContainer .CodeMirror-cursor { border-left-color: var(--accent) !important; }
+        .EasyMDEContainer .CodeMirror-selected { background: rgba(var(--glow), 0.2) !important; }
+        .EasyMDEContainer .CodeMirror-gutters {
+            background: var(--card);
+            border-right: 1px solid var(--border);
+            color: var(--muted);
+        }
+        .EasyMDEContainer .CodeMirror-linenumber { color: var(--muted); }
+        .EasyMDEContainer .CodeMirror-activeline-background { background: rgba(var(--glow), 0.05); }
+        .EasyMDEContainer .editor-preview {
+            background: var(--card);
+            color: var(--text);
+        }
+        .EasyMDEContainer .editor-preview-active {
+            background: var(--card);
+        }
+        .EasyMDEContainer .editor-preview h1,.editor-preview h2,.editor-preview h3 { color: var(--accent2); }
+        .EasyMDEContainer .editor-preview a { color: var(--accent); }
+        .EasyMDEContainer .editor-preview code {
+            background: var(--hover);
+            color: var(--accent2);
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .EasyMDEContainer .editor-preview pre {
+            background: var(--hover);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .EasyMDEContainer .editor-preview pre code { background: transparent; }
+        .EasyMDEContainer .editor-preview blockquote {
+            border-left: 3px solid var(--accent);
+            color: var(--muted);
+            padding-left: 12px;
+        }
+        .EasyMDEContainer .editor-preview img { max-width: 100%; border-radius: 8px; }
+        .EasyMDEContainer .editor-statusbar { color: var(--muted); border-top: 1px solid var(--border); }
+        .EasyMDEContainer .editor-statusbar span { color: var(--muted) !important; }
+        .EasyMDEContainer .editor-toolbar button:hover i,
+        .EasyMDEContainer .editor-toolbar button.active i { color: var(--accent2) !important; }
+        .EasyMDEContainer .editor-toolbar.fullscreen {
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
+        }
+        .EasyMDEContainer .CodeMirror-fullscreen {
+            background: var(--bg) !important;
+        }
+        .EasyMDEContainer .editor-preview-full { background: var(--card); color: var(--text); }
+
+        /* 修复 CDN 图标颜色 */
+        .EasyMDEContainer .editor-toolbar button i { color: var(--text) !important; }
     </style>
 </head>
 <body>
@@ -1041,6 +1143,37 @@
                 <input type="text" id="searchBox" placeholder="输入关键词搜索…" oninput="handleSearch()">
             </div>
 
+            <!-- 数据同步 -->
+            <div>
+                <h3>☁️ 数据同步</h3>
+                <div id="syncStatus" style="font-size:0.75em;color:var(--muted);margin-bottom:8px;"></div>
+                <details open style="margin-bottom:8px;background:rgba(var(--glow),0.08);border:1px solid rgba(var(--glow),0.25);border-radius:10px;padding:8px 12px;">
+                    <summary style="cursor:pointer;color:var(--accent2);font-size:0.9em;font-weight:700;">⚠️ 使用前必读（点击展开/收起）</summary>
+                    <div style="font-size:0.8em;color:var(--text);margin-top:6px;line-height:1.8;">
+                        <p>① 首次使用：粘贴 Token → 点「启用云同步」</p>
+                        <p>② 🔴 <b style="color:var(--accent2);">每次修改内容后，务必点「🔄 同步到云端」按钮，改动才会保存到云端！</b></p>
+                        <p>③ 换设备：同样粘贴 Token → 内容自动同步</p>
+                        <p>④ 导出/导入：手动备份恢复全部数据</p>
+                    </div>
+                </details>
+                <div id="tokenArea" style="display:none;margin-bottom:8px;">
+                    <input type="password" id="tokenInput" placeholder="粘贴 GitHub Token…" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8em;outline:none;margin-bottom:4px;">
+                    <button class="sync-btn" onclick="saveToken()" style="width:100%;">🔑 启用云同步</button>
+                </div>
+                <div style="display:flex;gap:5px;">
+                    <button class="sync-btn" id="importBtn" onclick="document.getElementById('importFile').click()" style="flex:1;">📥 导入</button>
+                    <button class="sync-btn" id="exportBtn" onclick="exportData()" style="flex:1;">📤 导出</button>
+                </div>
+                <button class="sync-btn" onclick="manualSync()" title="立即将本地改动同步到云端" style="width:100%;margin-top:5px;">🔄 立即同步</button>
+                <input type="file" id="importFile" accept=".json" onchange="importData(this)" style="display:none;">
+            </div>
+
+            <!-- 文章目录 -->
+            <div id="tocPanel" style="display:none;">
+                <h3>📑 文章目录</h3>
+                <nav id="tocNav" style="max-height:300px;overflow-y:auto;font-size:0.88em;"></nav>
+            </div>
+
             <!-- 标签云 -->
             <div>
                 <h3 id="tagCloudLabel">🏷️ 标签云</h3>
@@ -1052,7 +1185,7 @@
             <!-- 主题切换 -->
             <div>
                 <h3>🎨 主题风格</h3>
-                <div style="display:flex;gap:8px;margin-bottom:12px;" id="themePicker">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px;" id="themePicker">
                     <!-- JS 动态渲染 -->
                 </div>
             </div>
@@ -1063,22 +1196,6 @@
                 <p style="color:var(--muted);">📄 文章数：<strong id="statPosts" style="color:var(--accent);">0</strong></p>
                 <p style="color:var(--muted);">🏷️ 标签数：<strong id="statTags" style="color:var(--accent);">0</strong></p>
                 <p style="color:var(--muted);" id="visitorCount">👀 今日访客：<strong style="color:var(--accent);">--</strong></p>
-            </div>
-
-            <!-- 数据同步 -->
-            <div>
-                <h3>☁️ 数据同步</h3>
-                <div id="syncStatus" style="font-size:0.75em;color:var(--muted);margin-bottom:6px;"></div>
-                <div id="tokenArea" style="display:none;margin-bottom:8px;">
-                    <input type="password" id="tokenInput" placeholder="粘贴 GitHub Token…" style="width:100%;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.8em;outline:none;margin-bottom:4px;">
-                    <button class="sync-btn" onclick="saveToken()" style="width:100%;">🔑 启用云同步</button>
-                </div>
-                <div id="syncBtns" style="display:flex;gap:8px;">
-                    <button class="sync-btn" onclick="manualSync()" style="flex:1;" title="立即同步到云端">🔄 同步</button>
-                    <button class="sync-btn" id="exportBtn" onclick="exportData()" style="flex:1;">📤 导出</button>
-                    <button class="sync-btn" id="importBtn" onclick="document.getElementById('importFile').click()" style="flex:1;">📥 导入</button>
-                    <input type="file" id="importFile" accept=".json" onchange="importData(this)" style="display:none;">
-                </div>
             </div>
 
             <!-- 分类管理 -->
@@ -1166,7 +1283,7 @@
             <input type="text" id="photoTags" placeholder="风景, 旅行, 自然">
             <label>选择文件</label>
             <div class="photo-upload-row">
-                <input type="file" id="photoFile" accept="image/*" onchange="handlePhotoFile()">
+                <input type="file" id="photoFile" accept="image/*" multiple onchange="handlePhotoFile()">
                 <label for="photoFile" class="photo-file-btn">📁 从本地选择</label>
                 <span class="photo-file-name" id="photoFileName">未选择文件</span>
             </div>
@@ -1190,12 +1307,51 @@
         <div class="lightbox-caption" id="lightboxCaption"></div>
     </div>
 
+    <!-- 里模式密码弹窗 -->
+    <div class="modal-overlay" id="hiddenModal">
+        <div class="modal" style="max-width:380px;text-align:center;">
+            <h2>🔒 进入里模式</h2>
+            <p style="color:var(--muted);font-size:0.9em;margin-bottom:14px;">请输入密码解锁隐藏主题</p>
+            <input type="password" id="hiddenPassword" placeholder="输入密码…" style="width:100%;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.95em;outline:none;margin-bottom:12px;" onkeydown="if(event.key==='Enter')submitPassword()">
+            <p id="hiddenError" style="color:#e04040;font-size:0.8em;margin-bottom:8px;display:none;">❌ 密码错误</p>
+            <div class="btn-row" style="justify-content:center;">
+                <button class="btn btn-cancel" onclick="document.getElementById('hiddenModal').classList.remove('active')">取消</button>
+                <button class="btn btn-primary" onclick="submitPassword()">🔓 解锁</button>
+            </div>
+        </div>
+    </div>
 
+    <!-- 云同步提示弹窗 -->
+    <div class="modal-overlay active" id="syncNotice">
+        <div class="modal" style="max-width:450px;text-align:center;">
+            <h2>⚠️ 重要提示</h2>
+            <div style="font-size:0.95em;color:var(--text);line-height:1.8;margin:16px 0;text-align:left;">
+                <p>📝 欢迎来到 Ocean Breeze 博客！</p>
+                <p style="margin-top:10px;">🔴 <b style="color:var(--accent2);">每次修改博客内容后（写文章、传照片、改分类等），务必点击右侧栏「☁️ 数据同步」里的 <u>🔄 同步到云端</u> 按钮，改动才会永久保存！</b></p>
+                <p style="margin-top:10px;font-size:0.85em;color:var(--muted);">💡 首次使用需在同步区粘贴 GitHub Token 才能启用云同步。</p>
+            </div>
+            <button class="btn btn-primary" onclick="document.getElementById('syncNotice').classList.remove('active')" style="padding:12px 40px;font-size:1em;">我知道了 ✅</button>
+        </div>
+    </div>
+
+
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
     <script src="js/sync.js"></script>
+    <script src="js/renderer.js"></script>
     <script src="js/theme.js"></script>
     <script src="js/blog.js"></script>
     <script src="js/photos.js"></script>
-    <script src="js/pet.js"></script>
+    <!-- 宠物系统（已搁置，待后续完善）
+    <script src="js/pet/pet-types.js"></script>
+    <script src="js/pet/pet-draw.js"></script>
+    <script src="js/pet/pet-types.js"></script>
+    <script src="js/pet/pet-draw.js"></script>
+    <script src="js/pet/pet-draw-pipi.js"></script>
+    <script src="js/pet/pet-draw-baozang.js"></script>
+    <script src="js/pet/pet-system.js"></script>
+    -->
+    <!-- 旧 DOM 宠物已禁用 -->
+    <!-- <script src="js/pet.js"></script> -->
     <script>
         // ============ 云端同步初始化 ============
         async function initApp() {
@@ -1224,6 +1380,7 @@
 
         // 启动
         initApp();
+        if (typeof Renderer !== 'undefined') Renderer.start();
 
         // ============ 数据导入导出 ============
         function exportData() {

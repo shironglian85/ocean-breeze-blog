@@ -152,7 +152,7 @@
             document.getElementById('statTags').textContent = getAllPhotoTags().length;
         }
 
-        let pendingPhotoData = null;
+        var pendingPhotoFiles = [];  // 批量上传文件缓存
         let editingPhotoIdx = -1; // -1 = 新增模式
 
         function openPhotoDialog() {
@@ -179,7 +179,7 @@
             document.getElementById('photoFile').value = '';
             document.getElementById('photoFileName').textContent = '未选择文件';
             document.getElementById('photoPreview').style.display = 'none';
-            pendingPhotoData = null;
+            pendingPhotoFiles = [];
             if (p.url.startsWith('data:')) {
                 document.getElementById('photoPreviewImg').src = p.url;
                 document.getElementById('photoPreview').style.display = '';
@@ -194,7 +194,7 @@
             document.getElementById('photoFile').value = '';
             document.getElementById('photoFileName').textContent = '未选择文件';
             document.getElementById('photoPreview').style.display = 'none';
-            pendingPhotoData = null;
+            pendingPhotoFiles = [];
             editingPhotoIdx = -1;
         }
         document.getElementById('photoCancelBtn').addEventListener('click', closePhotoDialog);
@@ -202,63 +202,68 @@
             if (e.target === document.getElementById('photoOverlay')) closePhotoDialog();
         });
 
-        // 本地文件选择
+        // 本地文件选择（支持多选）
+        var pendingPhotoFiles = [];  // { name, data } 数组
+
         function handlePhotoFile() {
-            const file = document.getElementById('photoFile').files[0];
-            if (!file) return;
-            document.getElementById('photoFileName').textContent = file.name;
-            if (!document.getElementById('photoName').value) {
-                document.getElementById('photoName').value = file.name.replace(/\.[^.]+$/, '');
+            var files = document.getElementById('photoFile').files;
+            if (!files || files.length === 0) return;
+            document.getElementById('photoFileName').textContent = '已选 ' + files.length + ' 张照片';
+            if (!document.getElementById('photoName').value && files.length === 1) {
+                document.getElementById('photoName').value = files[0].name.replace(/\.[^.]+$/, '');
             }
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                pendingPhotoData = e.target.result;
-                document.getElementById('photoPreviewImg').src = pendingPhotoData;
-                document.getElementById('photoPreview').style.display = '';
-            };
-            reader.readAsDataURL(file);
+            pendingPhotoFiles = [];
+            var loaded = 0;
+            Array.from(files).forEach(function(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    pendingPhotoFiles.push({ name: file.name, data: e.target.result });
+                    loaded++;
+                    if (loaded === files.length) {
+                        // 显示第一张预览
+                        document.getElementById('photoPreviewImg').src = pendingPhotoFiles[0].data;
+                        document.getElementById('photoPreview').style.display = '';
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
         }
 
         document.getElementById('photoSaveBtn').addEventListener('click', () => {
-            const name = document.getElementById('photoName').value.trim();
-            const url = document.getElementById('photoUrl').value.trim();
-            const tagsRaw = document.getElementById('photoTags').value.trim();
-            const category = document.getElementById('photoCategory').value;
+            var name = document.getElementById('photoName').value.trim();
+            var url = document.getElementById('photoUrl').value.trim();
+            var tagsRaw = document.getElementById('photoTags').value.trim();
+            var category = document.getElementById('photoCategory').value;
 
-            if (!name) { alert('请输入照片名称！'); return; }
-
-            const tags = tagsRaw
-                ? tagsRaw.split(/[,，]/).map(t => t.trim()).filter(Boolean)
+            var tags = tagsRaw
+                ? tagsRaw.split(/[,，]/).map(function(t) { return t.trim(); }).filter(Boolean)
                 : [];
 
-            const photos = loadPhotos();
+            var photos = loadPhotos();
 
             if (editingPhotoIdx >= 0) {
-                // 编辑模式
-                const p = photos[editingPhotoIdx];
+                // 编辑模式（单张）
+                var p = photos[editingPhotoIdx];
                 p.name = name;
                 p.tags = tags;
                 p.category = category;
-                if (pendingPhotoData) {
-                    p.url = pendingPhotoData;
-                } else if (url) {
-                    p.url = url;
+                if (pendingPhotoFiles.length > 0) { p.url = pendingPhotoFiles[0].data; }
+                else if (url) { p.url = url; }
+            } else if (pendingPhotoFiles.length > 0) {
+                // 批量新增——每个文件一条记录
+                for (var i = 0; i < pendingPhotoFiles.length; i++) {
+                    var pf = pendingPhotoFiles[i];
+                    var photoName = pendingPhotoFiles.length === 1
+                        ? (name || pf.name.replace(/\.[^.]+$/, ''))
+                        : (name + ' (' + (i+1) + ')' || pf.name.replace(/\.[^.]+$/, ''));
+                    photos.unshift({ name: photoName, url: pf.data, tags: tags, category: category });
                 }
-                // 如果没提供新图片，保留原来的 url
-                if (!pendingPhotoData && !url) {
-                    // 编辑模式允许不改图片
-                }
+            } else if (url) {
+                // 单张 URL
+                if (!name) { alert('请输入照片名称！'); return; }
+                photos.unshift({ name: name, url: url, tags: tags, category: category });
             } else {
-                // 新增模式
-                let finalUrl;
-                if (pendingPhotoData) {
-                    finalUrl = pendingPhotoData;
-                } else if (url) {
-                    finalUrl = url;
-                } else {
-                    alert('请选择本地文件或输入图片链接！'); return;
-                }
-                photos.unshift({ name, url: finalUrl, tags, category });
+                alert('请选择本地文件或输入图片链接！'); return;
             }
 
             savePhotos(photos);

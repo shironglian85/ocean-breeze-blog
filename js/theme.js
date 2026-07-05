@@ -18,11 +18,42 @@
                 light:{ bg:'#e8f4f8', card:'#ffffff', accent:'#0077b6', accent2:'#00b4d8', text:'#1a2a3a', muted:'#5a6a7a', border:'#c8dce4', hover:'#d8ecf4', heroFrom:'#90e0ef', heroVia:'#caf0f8', heroTo:'#e8f4f8', glow:'0,119,182', particle:'0,119,182' }
             },
             space: {
-                name: '🌌 星辰低语',
+                name: '🌌 浩瀚深空',
                 dark: { bg:'#080510', card:'#120c1f', accent:'#8b5cf6', accent2:'#a78bfa', text:'#e2e0e8', muted:'#8880a0', border:'#1e1840', hover:'#1a1430', heroFrom:'#050510', heroVia:'#0d0830', heroTo:'#080510', glow:'139,92,246', particle:'167,139,250' },
                 light:{ bg:'#1a1525', card:'#241f35', accent:'#7c3aed', accent2:'#8b5cf6', text:'#e8e4f0', muted:'#9688b0', border:'#302840', hover:'#2a2240', heroFrom:'#120d20', heroVia:'#1a1040', heroTo:'#1a1525', glow:'124,58,237', particle:'139,92,246' }
             },
+            snow: {
+                name: '❄️ 雪落无声',
+                dark: { bg:'#1a1d24', card:'#22262f', accent:'#a0c4e8', accent2:'#c8dff5', text:'#e4e8ee', muted:'#8890a0', border:'#2e3340', hover:'#282c36', heroFrom:'#151820', heroVia:'#1c2030', heroTo:'#1a1d24', glow:'160,196,232', particle:'200,223,245' },
+                light:{ bg:'#f5f6f8', card:'#ffffff', accent:'#6b9ec4', accent2:'#8ab8dc', text:'#2a3040', muted:'#8890a0', border:'#dce0e8', hover:'#eef0f4', heroFrom:'#e0e6f0', heroVia:'#ecf0f6', heroTo:'#f5f6f8', glow:'107,158,196', particle:'138,184,220' }
+            },
         };
+
+        // 里模式（需密码解锁）
+        const HIDDEN_PASSWORD = 'lsrisolo';
+        let hiddenUnlocked = sessionStorage.getItem('hidden-unlocked') === 'true';
+
+        const hiddenThemes = {
+            hell: {
+                name: '👺 炼狱熔岩',
+                dark: { bg:'#1a0a0a', card:'#241010', accent:'#e04040', accent2:'#f06050', text:'#e8d8d8', muted:'#a08080', border:'#402020', hover:'#301818', heroFrom:'#120404', heroVia:'#1c0808', heroTo:'#1a0a0a', glow:'224,64,64', particle:'240,96,80' },
+                light:{ bg:'#2a1010', card:'#341818', accent:'#d04040', accent2:'#e05850', text:'#e8d8d8', muted:'#a88888', border:'#482828', hover:'#3c2020', heroFrom:'#200808', heroVia:'#2a1010', heroTo:'#2a1010', glow:'208,64,64', particle:'224,80,64' }
+            },
+        };
+
+        function getThemePalette(key) {
+            return themePalettes[key] || hiddenThemes[key];
+        }
+
+        function unlockHidden(password) {
+            if (password === HIDDEN_PASSWORD) {
+                hiddenUnlocked = true;
+                sessionStorage.setItem('hidden-unlocked', 'true');
+                renderThemePicker();
+                return true;
+            }
+            return false;
+        }
 
         let currentTheme = localStorage.getItem('blog-palette') || 'sunset';
         let isLightMode = localStorage.getItem('blog-mode') === 'light';
@@ -35,7 +66,7 @@
         }
 
         function applyTheme() {
-            const palette = themePalettes[currentTheme];
+            const palette = getThemePalette(currentTheme);
             const colors = isLightMode ? palette.light : palette.dark;
 
             const root = document.documentElement;
@@ -43,40 +74,79 @@
                 root.style.setProperty(`--${key}`, val);
             });
 
-            // 更新主题按钮图标
             document.getElementById('themeBtn').textContent = isLightMode ? '☀️' : '🌙';
 
-            // 更新主题选择器高亮
             document.querySelectorAll('.theme-card').forEach(card => {
                 card.classList.toggle('active', card.dataset.theme === currentTheme);
             });
 
-            // 更新标题和页脚
-            const themeName = themePalettes[currentTheme].name;
+            const themeName = getThemePalette(currentTheme).name;
             document.title = `${themeName} · ${isLightMode ? '浅色' : '深色'}`;
             document.getElementById('blogTitle').textContent = themeName;
             document.getElementById('blogFooter').innerHTML = `© 2026 ${themeName.split(' ').slice(1).join(' ')} · 用 ❤️ 和 ☕ 搭建`;
             persistSettings();
-            // 主题切换后重建粒子
             if (typeof initParticles === 'function') initParticles();
+        }
+
+        // 渲染主题卡片
+        function renderThemeCard(key, t) {
+            const colors = isLightMode ? t.light : t.dark;
+            const isActive = key === currentTheme;
+            return `<div class="theme-card" data-theme="${key}" onclick="switchTheme('${key}')"
+                style="text-align:center;padding:10px 6px;border-radius:10px;cursor:pointer;border:2px solid ${isActive ? 'var(--accent)' : 'var(--border)'};background:${colors.card};transition:all 0.3s;font-size:1.4em;">
+                <div>${t.name.split(' ')[0]}</div>
+                <div style="display:flex;gap:4px;justify-content:center;margin-top:5px;">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};filter:brightness(1.5);"></span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};"></span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};filter:brightness(0.5);"></span>
+                </div>
+            </div>`;
         }
 
         // 渲染主题选择器
         function renderThemePicker() {
             const picker = document.getElementById('themePicker');
-            picker.innerHTML = Object.entries(themePalettes).map(([key, t]) => {
-                const colors = isLightMode ? t.light : t.dark;
-                return `<div class="theme-card" data-theme="${key}" onclick="switchTheme('${key}')"
-                    style="flex:1;text-align:center;padding:10px 6px;border-radius:10px;cursor:pointer;border:2px solid ${key === currentTheme ? 'var(--accent)' : 'var(--border)'};background:${colors.card};transition:all 0.3s;font-size:1.4em;">
-                    <div>${t.name.split(' ')[0]}</div>
-                    <div style="display:flex;gap:4px;justify-content:center;margin-top:5px;">
-                        <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};filter:brightness(1.5);"></span>
-                        <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};"></span>
-                        <span style="width:10px;height:10px;border-radius:50%;background:${colors.accent};filter:brightness(0.5);"></span>
-                    </div>
+            let html = Object.entries(themePalettes).map(([key, t]) => renderThemeCard(key, t)).join('');
+
+            if (hiddenUnlocked) {
+                html += Object.entries(hiddenThemes).map(([key, t]) => renderThemeCard(key, t)).join('');
+            } else {
+                html += `<div onclick="promptPassword()" style="text-align:center;padding:10px 6px;border-radius:10px;cursor:pointer;border:2px dashed var(--border);background:var(--hover);transition:all 0.3s;font-size:1.4em;" title="需要密码解锁">
+                    <div>🔒</div>
+                    <div style="font-size:0.55em;color:var(--muted);margin-top:2px;">里模式</div>
                 </div>`;
-            }).join('');
+            }
+
+            picker.innerHTML = html;
         }
+
+        function promptPassword() {
+            const modal = document.getElementById('hiddenModal');
+            const input = document.getElementById('hiddenPassword');
+            const error = document.getElementById('hiddenError');
+            modal.classList.add('active');
+            input.value = '';
+            error.style.display = 'none';
+            input.focus();
+        }
+
+        function submitPassword() {
+            const input = document.getElementById('hiddenPassword');
+            const error = document.getElementById('hiddenError');
+            const modal = document.getElementById('hiddenModal');
+            if (unlockHidden(input.value)) {
+                modal.classList.remove('active');
+            } else {
+                error.style.display = '';
+                input.value = '';
+                input.focus();
+            }
+        }
+
+        // 点击遮罩关闭
+        document.getElementById('hiddenModal').addEventListener('click', function(e) {
+            if (e.target === this) this.classList.remove('active');
+        });
 
         function switchTheme(key) {
             currentTheme = key;
@@ -188,6 +258,9 @@
         const canvas = document.getElementById('particles');
         const ctx = canvas.getContext('2d');
         let particles = [];
+        let windForce = 0;
+        let windTarget = 0;
+
 
         function resizeCanvas() {
             canvas.width = canvas.parentElement.offsetWidth;
@@ -201,7 +274,9 @@
 
         function initParticles() {
             particles = [];
-            const count = Math.floor(canvas.width / 14);
+            const count = currentTheme === 'hell'
+                ? Math.floor(canvas.width / 6)
+                : Math.floor(canvas.width / 14);
             for (let i = 0; i < count; i++) {
                 if (currentTheme === 'forest') {
                     particles.push({
@@ -243,6 +318,35 @@
                         twinklePhase: Math.random() * Math.PI * 2,
                         isShootingStar,
                         trail: [],
+                    });
+                } else if (currentTheme === 'snow') {
+                    // 雪：飘落雪花
+                    const r = Math.random() * 3 + 1.5;
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        r: r,
+                        vx: (Math.random() - 0.5) * 0.5,
+                        vy: Math.random() * 0.6 + 0.3,
+                        alpha: Math.random() * 0.5 + 0.4,
+                        wobble: Math.random() * 0.8,
+                        wobbleSpeed: Math.random() * 0.01 + 0.005,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotSpeed: (Math.random() - 0.5) * 0.01,
+                    });
+                } else if (currentTheme === 'hell') {
+                    // 炼狱火焰粒子
+                    particles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height,
+                        r: 0.5,
+                        vy: -(Math.random() * 0.8 + 0.3),
+                        vx: (Math.random() - 0.5) * 0.3,
+                        alpha: 0,
+                        maxR: Math.random() * 12 + 5,
+                        growing: true,
+                        life: Math.random() * 0.5 + 0.5,
+                        hue: Math.floor(Math.random() * 25) + 10, // 10-35 橙红范围
                     });
                 } else {
                     // 海洋：上浮气泡
@@ -295,7 +399,10 @@
         }
 
         function animateParticles() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // 地狱主题用半透明覆盖做拖尾，其他主题完全清除
+            if (currentTheme !== 'hell') {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
             const style = getComputedStyle(document.documentElement);
             const color = style.getPropertyValue('--particle').trim();
 
@@ -445,6 +552,87 @@
                         ctx.fill();
                     }
                 });
+            } else if (currentTheme === 'snow') {
+                // 雪：飘落雪花
+                particles.forEach((p) => {
+                    p.x += p.vx + Math.sin(p.y * p.wobbleSpeed) * p.wobble;
+                    p.y += p.vy;
+                    p.rotation += p.rotSpeed;
+                    if (p.y > canvas.height + 20) { p.y = -20; p.x = Math.random() * canvas.width; }
+                    if (p.x < -20) p.x = canvas.width + 10;
+                    if (p.x > canvas.width + 20) p.x = -10;
+
+                    ctx.save();
+                    ctx.translate(p.x, p.y);
+                    ctx.rotate(p.rotation);
+                    ctx.beginPath();
+                    for (let j = 0; j < 6; j++) {
+                        const angle = (j * Math.PI) / 3;
+                        const x2 = Math.cos(angle) * p.r;
+                        const y2 = Math.sin(angle) * p.r;
+                        if (j === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+                    }
+                    ctx.closePath();
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha})`;
+                    ctx.fill();
+                    ctx.strokeStyle = `rgba(220, 230, 250, ${p.alpha * 0.5})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(0, 0, p.r * 1.8, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${p.alpha * 0.2})`;
+                    ctx.fill();
+                    ctx.restore();
+                });
+            } else if (currentTheme === 'hell') {
+                // 炼狱火焰：semi-transparent 拖尾 + additive 混合
+                // 地狱之风：风向缓慢变化
+                if (Math.random() < 0.01) windTarget = (Math.random() - 0.5) * 1.2;
+                windForce += (windTarget - windForce) * 0.02;
+
+                ctx.fillStyle = 'rgba(26, 10, 10, 0.18)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.globalCompositeOperation = 'lighter';
+                particles.forEach((p) => {
+                    p.y += p.vy;
+                    p.x += windForce + Math.sin(p.y * 0.015 + windForce * 2) * 0.4;
+                    p.life -= 0.006;
+
+                    // 粒子从无到有生长
+                    if (p.growing && p.r < p.maxR) {
+                        p.r += (p.maxR - p.r) * 0.05;
+                        p.alpha = Math.min(p.alpha + 0.03, 0.7);
+                        if (p.r >= p.maxR * 0.95) p.growing = false;
+                    }
+
+                    if (p.life <= 0 || p.y < canvas.height * 0.1 || p.y > canvas.height + 5) {
+                        p.y = canvas.height;
+                        p.x = Math.random() * canvas.width;
+                        p.life = Math.random() * 0.5 + 0.5;
+                        p.r = 0.5;
+                        p.maxR = Math.random() * 12 + 5;
+                        p.growing = true;
+                        p.alpha = 0;
+                        p.vy = -(Math.random() * 0.8 + 0.3);
+                        p.vx = (Math.random() - 0.5) * 0.3;
+                        p.hue = Math.floor(Math.random() * 25) + 10;
+                    }
+
+                    // 粒子径向渐变
+                    const hue = p.hue;
+                    const alpha = Math.min(p.alpha, p.life) * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                    const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r);
+                    grad.addColorStop(0, `hsla(${hue + 30}, 100%, 80%, ${alpha})`);
+                    grad.addColorStop(0.3, `hsla(${hue}, 100%, 55%, ${alpha * 0.8})`);
+                    grad.addColorStop(0.7, `hsla(${hue - 5}, 90%, 35%, ${alpha * 0.3})`);
+                    grad.addColorStop(1, `hsla(${hue - 10}, 80%, 15%, 0)`);
+                    ctx.fillStyle = grad;
+                    ctx.fill();
+                });
+                ctx.globalCompositeOperation = 'source-over';
             } else {
                 // 海洋：上浮气泡
                 particles.forEach((p) => {
@@ -456,9 +644,37 @@
                     drawBubble(ctx, p.x, p.y, p.r, color, p.alpha);
                 });
             }
-            requestAnimationFrame(animateParticles);
         }
-        animateParticles();
+        // animateParticles 不再自驱动，由 Renderer 统一调度
+        animateParticles();  // 初始绘制一帧
+
+        // ======== 暴露粒子系统接口 ========
+        window.ParticleSystem = {
+            get particles() { return particles; },
+            canvas: canvas,
+            ctx: ctx,
+
+            update: function() {
+                // 粒子位置更新目前内嵌在 animateParticles 中
+                // 后续阶段拆分时会移到这里
+            },
+
+            draw: animateParticles,
+
+            init: function() {
+                resizeCanvas();
+                initParticles();
+            },
+
+            getCurrentTheme: function() {
+                return currentTheme;
+            }
+        };
+
+        // 注册到统一渲染引擎
+        if (typeof Renderer !== 'undefined') {
+            Renderer.addLayer(window.ParticleSystem);
+        }
 
         // 主题初始化（放在粒子代码之后，确保 canvas 已就绪）
         renderThemePicker();
